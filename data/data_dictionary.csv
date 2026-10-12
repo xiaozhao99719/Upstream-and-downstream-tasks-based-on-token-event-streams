@@ -1,0 +1,47 @@
+file,field,unit_or_type,value_or_range,decimals,missing_rule
+static.csv,patient_id,identifier,P0001-P3000,0,never
+static.csv,birth_date,date YYYY-MM-DD,1940-2005,0,never
+static.csv,gender,enum,Male|Female,0,never
+static.csv,ethnicity,enum,Han|Minority,0,never
+static.csv,region,enum,East|West|South|North|Central,0,never
+static.csv,education,enum,Primary&Below|Middle|High|College&Above,0,never
+static.csv,occupation,enum,Manual|Office|Retired|Unemployed|Others,0,never
+static.csv,smoke_history,enum,Never|Former|Current,0,never
+static.csv,drink_history,enum,Never|Former|Current,0,never
+static.csv,htn_baseline,enum,Yes|No,0,never
+static.csv,dm_baseline,enum,Yes|No,0,never
+static.csv,hyperuricemia_baseline,enum,Yes|No,0,never
+static.csv,chd_baseline,enum,Yes|No,0,never
+static.csv,stroke_baseline,enum,Yes|No,0,never
+static.csv,malignancy_baseline,enum,Yes|No,0,never
+static.csv,autoimmune_baseline,enum,Yes|No,0,never
+static.csv,pathology_stage,enum,Stage1|Stage2|Stage3|Stage4,0,never
+dynamic.csv,patient_id,identifier,FK static.patient_id,0,never
+dynamic.csv,visit_date,date YYYY-MM-DD,2012-01-01..2024-12-31,0,never
+dynamic.csv,visit_type,enum,OPD|IPD|ER,0,never
+dynamic.csv,u24pro,g/24h,0.1-20.0,2,panel not ordered
+dynamic.csv,glu_f,mmol/L,3.0-15.0,2,panel not ordered
+dynamic.csv,PLA2R_ab,RU/ml,0-2000,1,not sampled
+dynamic.csv,WBC,10^9/L,2.0-25.0,2,panel not ordered
+dynamic.csv,HGB,g/L,60-180,0,panel not ordered
+dynamic.csv,PLT,10^9/L,30-450,0,panel not ordered
+dynamic.csv,NEUT_pct,%,20-90,1,specimen issue
+dynamic.csv,LYMPH_pct,%,10-70,1,specimen issue
+dynamic.csv,ALT,U/L,5-250,0,specimen issue
+dynamic.csv,AST,U/L,5-250,0,specimen issue
+dynamic.csv,TBIL,umol/L,2-80,1,specimen issue
+dynamic.csv,salb,g/L,15.0-55.0,1,panel not ordered
+dynamic.csv,stp,g/L,40.0-85.0,1,panel not ordered
+dynamic.csv,SCR,umol/L,40-800,0,panel not ordered
+dynamic.csv,BUN,mmol/L,2.5-35.0,2,panel not ordered
+dynamic.csv,UA,umol/L,120-600,0,specimen issue
+dynamic.csv,TC,mmol/L,2.0-12.0,2,specimen issue
+dynamic.csv,TG,mmol/L,0.3-6.0,2,specimen issue
+dynamic.csv,LDL-C,mmol/L,0.5-8.0,2,specimen issue
+dynamic.csv,HDL-C,mmol/L,0.6-2.5,2,specimen issue
+dynamic.csv,urine_prot_qual,enum,neg|trace|1+|2+|3+|4+,0,panel not ordered
+dynamic.csv,urine_bld,enum,neg|trace|1+|2+|3+,0,specimen issue
+dynamic.csv,urine_glu,enum,neg|1+|2+|3+|4+,0,specimen issue
+dynamic.csv,urine_leuk,enum,neg|trace|1+|2+|3+,0,specimen issue
+dynamic.csv,urine_sg,ratio,1.005-1.035,3,specimen issue
+dynamic.csv,drug_raw,text,semicolon separated prescription actions,0,no action
