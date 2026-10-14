@@ -542,14 +542,24 @@ def tstcc_loss(pooled_aug1, pooled_aug2, cfg, head=None):
 
 
 def downstream_regression_loss(y_pred, y, cfg):
-    """下游回归损失（cfg["down_loss"]：l1 / smooth_l1 / mse）。"""
+    """下游回归损失（cfg["down_loss"]：l1 / smooth_l1 / mse）。
+
+    数值稳定性说明：AMP(fp16) 下 mse 对残差做平方会显著放大梯度，若回归目标
+    （如透析龄/临床指标）未标准化到较小量级，极易触发 GradScaler 梯度溢出。
+    这里对目标做逐 batch 稳健缩放（除以中位绝对偏差 MAD + eps）以稳定量级，
+    等价于对损失做自适应缩放，不改变 argmin 方向；l1 本身量级温和，不做缩放。
+    """
     mode = str(cfg.get("down_loss", "l1"))
     y = y.float()
+    y_pred = y_pred.float()
+    if mode == "l1":
+        return F.l1_loss(y_pred, y)
     if mode == "mse":
-        return F.mse_loss(y_pred, y)
-    if mode == "smooth_l1":
-        return F.smooth_l1_loss(y_pred, y, beta=0.1)
-    return F.l1_loss(y_pred, y)
+        diff = y_pred - y
+        scale = torch.median(torch.abs(y - torch.median(y))).clamp(min=1e-3) + 1e-6
+        return F.mse_loss(diff / scale, torch.zeros_like(diff))
+    # smooth_l1
+    return F.smooth_l1_loss(y_pred, y, beta=0.1)
 
 
 # ---------------------------------------------------------------------------
@@ -938,10 +948,15 @@ class DuETTModel(_DownstreamBase):
         hidden, pooled = self._encode(batch)
         key_pad = (batch["attn_masks"] == 0)
         h2, _ = self.time_attn(hidden, hidden, hidden, key_padding_mask=key_pad)
-        mixed = torch.tanh(self.time_gate(torch.cat([hidden, h2], dim=-1)))
+        # 门控 tanh 与掩码池化在 fp16 下精度/数值稳定性较差，强制 fp32 计算，
+        # 避免 AMP 下梯度溢出或精度损失（结果再转回 hidden 的 dtype）。
+        hidden32 = hidden.float()
+        h2_32 = h2.float()
+        mixed = torch.tanh(self.time_gate(torch.cat([hidden32, h2_32], dim=-1)))
         mixed = self.time_norm(mixed)
         mask_f = batch["attn_masks"].to(mixed.dtype).unsqueeze(-1)
         pooled = (mixed * mask_f).sum(dim=1) / mask_f.sum(dim=1).clamp(min=1.0)
+        pooled = pooled.to(hidden.dtype)
         return self.regressor(pooled).squeeze(-1)
 
 

@@ -171,9 +171,9 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--up_amp", action="store_true", default=True, help="上游启用混合精度")
     parser.add_argument("--up_no_amp", action="store_false", dest="up_amp",
                         help="上游关闭混合精度")
-    parser.add_argument("--up_amp_init_scale", type=float, default=0.0,
-                        help="上游 AMP 初始缩放（0=torch 默认 65536）；若日志频繁提示"
-                             "AMP 跳过更新（梯度溢出），可设为 8192 避免首步溢出")
+    parser.add_argument("--up_amp_init_scale", type=float, default=2048.0,
+                        help="上游 AMP 初始缩放；torch 默认 65536 偏大易首步溢出，"
+                             "默认改用 2048（若仍溢出可继续调小，或 --up_no_amp）")
     parser.add_argument("--up_mask_ratio", type=float, default=0.15,
                         help="上游 masked event modeling 的 mask 比例")
     parser.add_argument("--up_tau", type=float, default=0.1, help="上游对比损失温度系数")
@@ -217,8 +217,9 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--down_amp", action="store_true", default=True, help="下游启用混合精度")
     parser.add_argument("--down_no_amp", action="store_false", dest="down_amp",
                         help="下游关闭混合精度")
-    parser.add_argument("--down_amp_init_scale", type=float, default=0.0,
-                        help="下游 AMP 初始缩放（0=torch 默认 65536）")
+    parser.add_argument("--down_amp_init_scale", type=float, default=2048.0,
+                        help="下游 AMP 初始缩放；torch 默认 65536 偏大易首步溢出，"
+                             "默认改用 2048（若仍溢出可继续调小，或 --down_no_amp）")
     parser.add_argument("--down_dropout", type=float, default=0.2,
                         help="下游回归头 Dropout（HPO 调参目标）")
     parser.add_argument("--down_loss", default="l1", choices=DOWN_LOSSES,
@@ -399,7 +400,7 @@ def make_grad_scaler(device, enabled: bool, init_scale=None):
     """
     use = bool(enabled) and str(device.type) == "cuda"
     kwargs = {"enabled": use}
-    if init_scale:
+    if init_scale is not None and float(init_scale) > 0:
         kwargs["init_scale"] = float(init_scale)
     amp_mod = getattr(torch, "amp", None)
     if amp_mod is not None and hasattr(amp_mod, "GradScaler"):
